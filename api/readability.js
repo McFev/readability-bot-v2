@@ -4,7 +4,7 @@ const { JSDOM } = require("jsdom");
 const { encode: htmlEntitiesEscape } = require("html-entities");
 const createDOMPurify = require("dompurify");
 
-const { APP_URL, constructIvUrl } = require("./_common.js");
+const { APP_URL } = require("./_common.js");
 
 module.exports = async (request, response) => {
   if ((request.headers["user-agent"] ?? "").includes("readability-bot")) {
@@ -32,15 +32,16 @@ module.exports = async (request, response) => {
     const DOMPurify = createDOMPurify(dom.window);
     const doc = dom.window.document;
     fixImgLazyLoadFromDataSrc(doc);
-    if ((new URL(url)).hostname === "www.xiaohongshu.com") {
+    const hostname = (new URL(url)).hostname
+    if (hostname === "www.xiaohongshu.com") {
       fixXiaohongshuImages(doc);
     }
-    else if ((new URL(url)).hostname === "mp.weixin.qq.com") {
+    if (hostname === "mp.weixin.qq.com") {
       fixWeixinArticle(doc);
     }
 
     let article_content = null;
-    if ((new URL(url)).hostname === "telegra.ph") {
+    if (hostname === "telegra.ph") {
       const ac = doc.querySelector(".tl_article_content");
       if (ac) {
         // CSS rules in https://telegra.ph/css/core.min.css
@@ -111,6 +112,12 @@ function render(meta) {
   ${ogImage}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
   <title>${htmlEntitiesEscape(title)}</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Readability" />
+  <link rel="manifest" href="/site.webmanifest" />
   <style>
     * {
       font-family: serif;
@@ -179,7 +186,7 @@ function render(meta) {
 
     <hr />
     <footer class="section page-footer is-size-7">
-      <small>The article(<a title="Telegram Intant View link" href="${constructIvUrl(url)}">IV</a>) is scraped and extracted from <a title="Source link" href="${url}" target="_blank">${htmlEntitiesEscape(
+      <small>The article is scraped and extracted from <a title="Source link" href="${url}" target="_blank">${htmlEntitiesEscape(
     siteName
   )}</a> by <a href="${APP_URL}">readability-bot</a> at <time datetime="${genDate.toISOString()}">${genDate.toString()}</time>.</small>
     </footer>
@@ -220,7 +227,7 @@ function isValidUrl(url) {
 const EASTER_EGG_PAGE = `<html>
 <head><title>Catastrophic Server Error</title></head>
 <body>
-  <p>Server is down. (<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">🛠︎ Debug</a>)</p>
+  <p>Server is down.</p>
 </body>
 </html>
 `;

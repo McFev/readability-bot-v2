@@ -9,7 +9,7 @@
 
 <main class="section is-medium columns is-flex is-vcentered">
 	<div class="container is-max-desktop has-text-centered">
-		<h1 class="title">Readability Bot</h1>
+		<h1 class="title" translate="no"><img src="/favicon.svg" alt="logo"> Readability</h1>
 		<form action="/api/readability" method="get" class="search-form">
 			<div class="field has-addons">
 				<p class="control is-expanded">
@@ -32,18 +32,10 @@
 			</div>
 		</form>
 		<p>
-			Telegram:
-			<a href="https://t.me/ReadabBot" target="_blank"> @ReadabBot </a>
-			<span class="seperator">|</span>
-			<a href="https://github.com/gowee/readability-bot" target="_blank">
-				Source
-			</a>
-		</p>
-		<p>
 			<small>
 				The 
 				<a
-					href="https://github.com/gowee/readability-bot"
+					href="https://github.com/McFev/readability"
 					target="_blank"
 				>
 				service
@@ -70,14 +62,14 @@
 	}
 
 	h1 {
-		color: #ff3e00;
+		color: #CA4638;
 		text-transform: uppercase;
 		font-size: 3.6em;
-		font-weight: 100;
+		font-weight: bold;
 	}
 
-	.seperator {
-		padding: 0 3px;
+	h1 > img {
+		height: 1cap;
 	}
 
 	.search-form .field {
