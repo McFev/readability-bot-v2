@@ -35,7 +35,7 @@
 			<small>
 				The 
 				<a
-					href="https://github.com/McFev/readability"
+					href="https://github.com/McFev/readability-bot-v2"
 					target="_blank"
 				>
 				service
