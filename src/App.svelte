@@ -64,7 +64,7 @@
 	h1 {
 		color: #CA4638;
 		text-transform: uppercase;
-		font-size: 3.6em;
+		font-size: 2.5em;
 		font-weight: bold;
 	}
 

@@ -11,7 +11,8 @@ module.exports = async (request, response) => {
     response.send(EASTER_EGG_PAGE);
     return;
   }
-  let { url, /*selector,*/ type, format } = request.query;
+  let { url, type, format, changeiframe } = request.query;
+  changeiframe = changeiframe === 'true' || changeiframe === '1';
   if (!format) {
     format = type; // the type param will be deprecated in favor of format
   }
@@ -40,7 +41,58 @@ module.exports = async (request, response) => {
       fixWeixinArticle(doc);
     }
 
-    let article_content = null;
+    if (changeiframe) {
+      doc.querySelectorAll('iframe').forEach(iframe => {
+        let src = iframe.getAttribute('src');
+        let textContent = src;
+
+        if (src.startsWith('//')) {
+          src = 'https:' + src;
+        }
+
+        if (src.startsWith('https://vkvideo.ru/video_ext.php?') || src.startsWith('https://vk.com/video_ext.php?')) {
+          const urlParams = new URLSearchParams(src.split('?')[1]);
+          const oid = urlParams.get('oid');
+          const id = urlParams.get('id');
+          if (oid && id) {
+            src = `https://vkvideo.ru/video${oid}_${id}`;
+          }
+          textContent = 'vk video';
+        }
+        else if (src.startsWith('https://vk.com/widget_playlist.php?')) {
+          const urlParams = new URLSearchParams(src.split('?')[1]);
+          const oid = urlParams.get('oid');
+          const pid = urlParams.get('pid');
+          if (oid && pid) {
+            src = `https://vk.com/music/album/${oid}_${pid}`;
+          }
+          textContent = 'vk album';
+        }
+        else if (src.startsWith('https://music.yandex.ru/iframe/album/')) {
+          const albumId = src.split('/').pop();
+          src = `https://music.yandex.ru/album/${albumId}`;
+          textContent = 'yandex music';
+        }
+        else if (src.startsWith('https://www.youtube.com/embed/')) {
+          const videoId = src.split('/').pop();
+          src = `https://www.youtube.com/watch?v=${videoId}`;
+          textContent = 'youtube';
+        }
+        else if (src.startsWith('https://music.mts.ru/widget/album/')) {
+          const albumId = src.split('/')[5].split('?')[0];
+          src = `https://music.mts.ru/album/${albumId}`;
+          textContent = 'mts music';
+        }
+
+        const link = doc.createElement('a');
+        link.href = src;
+        link.textContent = textContent;
+        link.target = '_blank';
+
+        iframe.parentNode.replaceChild(link, iframe);
+      });
+    }
+    let articleContent = null;
     if (hostname === "telegra.ph") {
       const ac = doc.querySelector(".tl_article_content");
       if (ac) {
@@ -48,23 +100,62 @@ module.exports = async (request, response) => {
         ac.querySelector("h1").style.display = "none";
         ac.querySelector("address").style.display = "none";
 
-        article_content = ac.innerHTML;
+        articleContent = ac.innerHTML;
       }
     }
+    let datePublished = null;
+    let author = null;
+    let tags = [];
+    let constLang = null;
+    //let debug = {}; // TODO
+    let pageNotFound = false;
+    if (hostname === "www.rap.ru") {
+      const newValue = fixRapRuArticle(doc);
+      datePublished = newValue.datePublished;
+      author = newValue.author;
+      tags = newValue.tags;
+      pageNotFound = newValue.notFound;
+    }
+    if (hostname === "the-flow.ru") {
+      const newValue = fixTheFlowArticle(doc);
+      datePublished = newValue.datePublished;
+      author = newValue.author;
+      pageNotFound = newValue.notFound;
+    }
+    if (hostname === "hiphop4real.com") {
+      const newValue = fixHiphop4realArticle(doc);
+      tags = newValue.tags;
+      pageNotFound = newValue.notFound;
+    }
+    if (pageNotFound) {
+      articleContent = 'Cтраница не найдена!';
+    }
+    if (hostname === "thecode.media") {
+      const newValue = fixThecodeMediaArticle(doc);
+      tags = newValue.tags;
+    }
+    if (hostname === 'www.volzsky.ru') {
+      const newValue = fixVolzskyArticle(doc);
+      datePublished = newValue.datePublished;
+      author = newValue.author;
+      constLang = 'ru-RU';
+    }
 
-    const reader = new Readability(
-      /*selector ? doc.querySelector(selector) :*/ doc
-    );
+    const reader = new Readability(doc);
     const article = reader.parse();
-    const lang = extractLang(doc);
+    const lang = constLang ?? extractLang(doc);
     // some stupid websites like xiaohongshu.com use the non-standard "name" attr
     const ogImage = doc.querySelector('meta[property="og:image"], meta[name="og:image"]');
     meta = Object.assign({ url, lang }, article);
-    meta.byline = stripRepeatedWhitespace(meta.byline);
+    meta.lang = lang ?? meta.lang;
+    meta.byline = stripRepeatedWhitespace(author ?? meta.byline);
     meta.siteName = stripRepeatedWhitespace(meta.siteName);
     meta.excerpt = stripRepeatedWhitespace(meta.excerpt);
-    meta.content = DOMPurify.sanitize(article_content ?? meta.content);
+    meta.content = DOMPurify.sanitize(articleContent ?? meta.content);
     meta.imageUrl = (ogImage || {}).content;
+    meta.publishedTime = datePublished ?? meta.publishedTime;
+    meta.tags = tags;
+    //meta.debug = debug; // TODO
   } catch (e) {
     response.status(500).send(e.toString());
     return;
@@ -201,9 +292,6 @@ function constructUpstreamRequestHeaders(headers) {
   return {
     "user-agent": (headers["user-agent"] ?? "") + ` readability-bot/0.0`,
     "referer": "https://www.google.com/?feeling-lucky"
-    /*"x-real-ip": headers["x-real-ip"],
-    "x-forwarded-for":
-      headers["x-real-ip"] + ", " + (headers["x-forwarded-for"] ?? ""),*/
   };
 }
 
@@ -229,8 +317,7 @@ const EASTER_EGG_PAGE = `<html>
 <body>
   <p>Server is down.</p>
 </body>
-</html>
-`;
+</html>`;
 
 function extractLang(doc) {
   // Some malformed HTMLs may confuse querySelector.
@@ -272,4 +359,300 @@ function fixWeixinArticle(doc) {
   // sample page: https://mp.weixin.qq.com/s/ayHC7MpG6Jpiogzp-opQFw
   const jc = doc.querySelector("#js_content, .rich_media_content");
   jc.style = ""; // remove visibility: hidden
+}
+
+function fixRapRuArticle(doc) {
+  const result = {
+    datePublished: null,
+    author: null,
+    tags: [],
+    notFound: false
+  }
+
+  //---notFound---
+  const headElement = doc.querySelector('h1, h2');
+  if (headElement && headElement?.textContent.toLowerCase().includes('данной страницы не существует')) {
+    result.notFound = true;
+    return result;
+  }
+
+  //---datePublished---
+  const dateElements = doc.querySelectorAll("p.date, span.date");
+  let dateString = '';
+  for (const el of dateElements) {
+    dateString = el.textContent.trim() || dateString;
+    el.remove();
+  }
+  if (!!dateString) {
+    const months = {
+      января: 0, февраля: 1, марта: 2, апреля: 3, мая: 4, июня: 5,
+      июля: 6, августа: 7, сентября: 8, октября: 9, ноября: 10, декабря: 11
+    };
+    const parts = dateString.split(/[\s,]+/);
+    const day = parseInt(parts[0], 10);
+    const month = months[parts[1].toLowerCase().trim()];
+    const year = parseInt(parts[2], 10);
+    const timeParts = parts[3].split(':');
+    const hours = parseInt(timeParts[0], 10);
+    const minutes = parseInt(timeParts[1], 10);
+    result.datePublished = new Date(year, month, day, hours, minutes);
+  }
+
+  //---author---
+  const authorElements = doc.querySelectorAll("p.authors, span.authors, p.author, span.author");
+  let authorString = '';
+  for (const el of authorElements) {
+    authorString = el.textContent.trim() || authorString;
+    el.remove();
+  }
+  if (!!authorString) {
+    result.author = authorString.replaceAll('Авторы:', '').replaceAll('Автор:', '').trim();
+  }
+
+  //---og:image og:sitename---
+  const img = doc.querySelector('img.pic');
+  if (img?.src) {
+    const meta = doc.createElement('meta');
+    meta.setAttribute('property', 'og:image');
+    meta.setAttribute('content', img.src);
+    doc.head.appendChild(meta);
+  }
+  meta = doc.createElement('meta');
+  meta.setAttribute('property', 'og:site_name');
+  meta.setAttribute('content', 'RAP.RU');
+  doc.head.appendChild(meta);
+
+  //---quote---
+  doc.querySelectorAll('div.announce').forEach(div => {
+    if (div.textContent.trim() !== '') {
+      const blockquote = doc.createElement('blockquote');
+      blockquote.innerHTML = div.innerHTML;
+      Array.from(div.attributes).forEach(attr => {
+        blockquote.setAttribute(attr.name, attr.value);
+      });
+      div.replaceWith(blockquote);
+    } else {
+      div.remove();
+    }
+  });
+
+  //---tags---
+  result.tags = Array.from(doc.querySelectorAll('div.tags a')).map(a => a.textContent.trim());
+
+  //---лишнее, копия из instantview template---
+  doc.querySelectorAll('hr + p a').forEach(el => el.remove());
+  doc.querySelectorAll('hr ~ p strong').forEach(el => {
+    if (el.textContent.toLowerCase().includes('в тему')) {
+      el.remove();
+    }
+  });
+  doc.querySelectorAll('hr').forEach(el => el.remove());
+
+  return result;
+}
+
+function fixTheFlowArticle(doc) {
+  const result = {
+    datePublished: null,
+    author: null,
+    notFound: false
+  }
+
+  //---notFound---
+  const headElement = doc.querySelector('h1, h2');
+  if (headElement && headElement?.textContent.toLowerCase().includes('данная страница не найдена')) {
+    result.notFound = true;
+    return result;
+  }
+
+  //---datePublished---
+  const dateElements = doc.querySelectorAll("meta[itemprop='datePublished']");
+  let dateString = '';
+  for (const el of dateElements) {
+    dateString = el?.content.trim() || dateString;
+    el.remove();
+  }
+  if (dateString) {
+    const date = new Date(dateString);
+    const now = new Date(); //есть только дата, поэтому добавляем текущее время
+    date.setHours(now.getHours());
+    date.setMinutes(now.getMinutes());
+    date.setSeconds(now.getSeconds());
+    result.datePublished = date.toISOString();
+  }
+
+  //---author---
+  //result.author = 'The Flow'; //автора нет, поэтому константа
+
+  //---quote & content---
+  const descr = doc.querySelector('div.article__descr');
+  const text = doc.querySelector('div.article__text');
+  const body = doc.querySelector('body');
+  if (descr && text) {
+    text.innerHTML = descr.outerHTML + text.innerHTML;
+    descr.remove();
+  }
+  if (body && text) {
+    body.innerHTML = text.innerHTML;
+  }
+  doc.querySelectorAll('div.article__descr').forEach(div => {
+    if (div.textContent.trim() !== '') {
+      const blockquote = doc.createElement('blockquote');
+      blockquote.innerHTML = div.innerHTML;
+      Array.from(div.attributes).forEach(attr => {
+        blockquote.setAttribute(attr.name, attr.value);
+      });
+      div.replaceWith(blockquote);
+    } else {
+      div.remove();
+    }
+  });
+
+  //---удаление 'в тему:'---
+  const hrs = doc.querySelectorAll('hr');
+  // Проходим по парам <hr> (0-1, 2-3, 4-5 и т.д.)
+  for (let i = 0; i < hrs.length; i += 2) {
+    const firstHr = hrs[i];
+    const secondHr = hrs[i + 1];
+    if (!secondHr) break; // Если нет пары, выходим
+    // Проверяем, есть ли между ними "в тему:"
+    let node = firstHr.nextSibling;
+    let hasInTheme = false;
+    // Перебираем узлы между <hr>
+    while (node && node !== secondHr) {
+      if (node.textContent.toLowerCase().includes('в тему:')) {
+        hasInTheme = true;
+        break;
+      }
+      node = node.nextSibling;
+    }
+    // Если нашли "в тему:", удаляем пару <hr> и всё между ними
+    if (hasInTheme) {
+      const nodesToRemove = [];
+      let currentNode = firstHr.nextSibling;
+      // Собираем узлы между <hr> для удаления
+      while (currentNode && currentNode !== secondHr) {
+        nodesToRemove.push(currentNode);
+        currentNode = currentNode.nextSibling;
+      }
+      // Удаляем всё между <hr>
+      nodesToRemove.forEach(node => node.remove());
+      // Удаляем сами <hr>
+      firstHr.remove();
+      secondHr.remove();
+      // Уменьшаем индекс, т.к. массив hrs изменился
+      i -= 2;
+    }
+  }
+
+  return result;
+}
+
+function fixHiphop4realArticle(doc) {
+  const result = {
+    tags: [],
+    notFound: false
+  }
+
+  //---notFound---
+  const headElement = doc.querySelector('h1, h2');
+  if (headElement && headElement?.textContent.toLowerCase().includes('данная страница не найдена')) {
+    result.notFound = true;
+    return result;
+  }
+
+  //---title---
+  const metaTag = doc.querySelector('meta[property="og:title"]');
+  if (metaTag) {
+    metaTag.setAttribute('content', metaTag.getAttribute('content').replace('— HipHop4Real', '').trim());
+  }
+
+  //---tags---
+  result.tags = Array.from(doc.querySelectorAll('div.entry_tags a')).map(a => a.textContent.trim());
+
+  //---content---
+  const text = doc.querySelector('div.entry_content');
+  const body = doc.querySelector('body');
+  if (body && text) {
+    body.innerHTML = text.innerHTML;
+  }
+  doc.querySelectorAll('div.full_meta').forEach(div => {
+    div.remove();
+  });
+
+  return result;
+}
+
+function fixThecodeMediaArticle(doc) {
+  const result = {
+    tags: []
+  }
+
+  //---title---
+  const metaTag = doc.querySelector('meta[property="og:title"]');
+  if (metaTag) {
+    metaTag.setAttribute('content',
+      metaTag.getAttribute('content')
+        .replace(/\s*—\s*(журнал\s*)?[«"]?код[»"]?.*$/gi, '')
+        .trim())
+  }
+
+  //---tags---
+  result.tags = [...new Set(
+    Array.from(doc.querySelectorAll('a.crumb-name'))
+      .map(a => a.textContent.trim().replace(/^#/, ''))
+  )];
+
+  return result;
+}
+
+function fixVolzskyArticle(doc) {
+  const result = {
+    datePublished: null,
+    author: null
+  }
+
+  //---content---
+  const text = doc.querySelector('div#n_n');
+  const body = doc.querySelector('body');
+  if (body && text) {
+    body.innerHTML = text.innerHTML;
+  }
+
+  //---datePublished---
+  const allDivs = doc.querySelectorAll('div');
+  let lastDiv = null;
+  for (const div of allDivs) {
+    const text = div.textContent.trim();
+    const match = text.match(/\d{2} \S+ \d{4} \d{2}:\d{2}:\d{2}/);
+    if (match) {
+      const dateString = match[0]; // "05 июня 2025 15:58:10"
+      const months = {
+        января: 0, февраля: 1, марта: 2, апреля: 3, мая: 4, июня: 5,
+        июля: 6, августа: 7, сентября: 8, октября: 9, ноября: 10, декабря: 11
+      };
+      const dateParts = dateString.split(' ');
+      const day = parseInt(dateParts[0], 10);
+      const month = months[dateParts[1]];
+      const year = parseInt(dateParts[2], 10);
+      const [hours, minutes, seconds] = dateParts[3].split(':').map(Number);
+      result.datePublished = new Date(year, month, day, hours, minutes, seconds);
+      lastDiv = div;
+    }
+  }
+  if (lastDiv) {
+    lastDiv.remove();
+  }
+
+  //---author---
+  const authorElements = doc.querySelectorAll('a[itemprop="author"]');
+  let authorString = '';
+  for (const el of authorElements) {
+    authorString = el.textContent.trim() || authorString;
+  }
+  if (authorString) {
+    result.author = authorString;
+  }
+
+  return result;
 }
