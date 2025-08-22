@@ -86,6 +86,27 @@ module.exports = async (request, response) => {
           src = `https://music.mts.ru/album/${albumId}`;
           textContent = 'mts music';
         }
+        else if (src.startsWith('https://zvuk.com/embed/track?id=')) {
+          const urlParams = new URLSearchParams(src.split('?')[1]);
+          const id = urlParams.get('id');
+          if (id) {
+            src = `https://zvuk.com/track/${id}`;
+          }
+          textContent = 'сбер звук track';
+        }
+        else if (src.startsWith('https://zvuk.com/embed/release?id=')) {
+          const urlParams = new URLSearchParams(src.split('?')[1]);
+          const id = urlParams.get('id');
+          if (id) {
+            src = `https://zvuk.com/release/${id}`;
+          }
+          textContent = 'сбер звук release';
+        }
+        else if (src.startsWith('https://rutube.ru/play/embed/')) {
+          const videoId = src.split('/').filter(Boolean).pop();
+          src = `https://rutube.ru/video/${videoId}/`;
+          textContent = 'rutube video';
+        }
 
         const link = doc.createElement('a');
         link.href = src;
@@ -451,7 +472,9 @@ function fixRapRuArticle(doc) {
   });
 
   //---tags---
-  result.tags = Array.from(doc.querySelectorAll('div.tags a')).map(a => a.textContent.trim());
+  const tags = doc.querySelectorAll('div.tags a');
+  result.tags = Array.from(tags).map(a => a.textContent.trim());
+  tags.forEach(a => a.remove());
 
   //---лишнее, копия из instantview template---
   doc.querySelectorAll('hr + p a').forEach(el => el.remove());
