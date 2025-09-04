@@ -545,7 +545,7 @@ function fixTheFlowArticle(doc) {
     }
   });
 
-  //---удаление 'в тему:'---
+  //---удаление 'в тему:' [1]---
   const hrs = doc.querySelectorAll('hr');
   // Проходим по парам <hr> (0-1, 2-3, 4-5 и т.д.)
   for (let i = 0; i < hrs.length; i += 2) {
@@ -581,6 +581,16 @@ function fixTheFlowArticle(doc) {
       i -= 2;
     }
   }
+
+  //---удаление 'в тему:' [2]---
+  doc.querySelectorAll("a").forEach(a => {
+    // проверяем, есть ли перед ссылкой текст "В ТЕМУ:"
+    const prevNode = a.previousSibling;
+    if (prevNode && prevNode.nodeType === 3 && prevNode.textContent.trim().toLowerCase().startsWith("в тему:")) {
+      prevNode.remove(); // удаляем текст "В ТЕМУ:"
+      a.remove();        // удаляем ссылку
+    }
+  });
 
   return result;
 }
