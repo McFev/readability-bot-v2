@@ -583,6 +583,15 @@ function fixTheFlowArticle(doc) {
   }
 
   //---удаление 'в тему:' [2]---
+  doc.querySelectorAll("center").forEach(center => {
+    const hasStrong = center.querySelector("strong") !== null;
+    const hasLink = center.querySelector("a[href]") !== null;
+    const containsListen = center.textContent.toUpperCase().includes("СЛУШАТЬ");
+
+    if (hasStrong && hasLink && !containsListen) {
+      center.remove();
+    }
+  });
   doc.querySelectorAll("a").forEach(a => {
     // проверяем, есть ли перед ссылкой текст "В ТЕМУ:"
     const prevNode = a.previousSibling;
