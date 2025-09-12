@@ -600,6 +600,11 @@ function fixTheFlowArticle(doc) {
       a.remove();        // удаляем ссылку
     }
   });
+  doc.querySelectorAll("strong").forEach(strong => {
+    if (strong.textContent.trim().toLowerCase().startsWith("в тему:")) {
+      strong.remove();
+    }
+  });
 
   return result;
 }
