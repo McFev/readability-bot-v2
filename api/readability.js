@@ -158,7 +158,7 @@ module.exports = async (request, response) => {
       const newValue = fixThecodeMediaArticle(doc);
       tags = newValue.tags;
     }
-    if (hostname === 'www.volzsky.ru') {
+    if (hostname === 'www.volzsky.ru' || url.includes('www.volzsky.ru')) {
       const newValue = fixVolzskyArticle(doc);
       datePublished = newValue.datePublished;
       author = newValue.author;
