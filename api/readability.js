@@ -473,11 +473,11 @@ function fixRapRuArticle(doc) {
   
   //---duplicate H2---
   function removeH2IfInTitle() {
-    const title = document.querySelector('head title');
+    const title = doc.querySelector('head title');
     if (!title) return;
     
-    const titleText = title.textContent;
-    const articleH2s = document.querySelectorAll('article h2');
+    const titleText = title.textContent.trim();
+    const articleH2s = doc.querySelectorAll('article h2');
     
     articleH2s.forEach(h2 => {
       const h2Text = h2.textContent.trim();
