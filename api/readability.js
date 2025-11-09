@@ -470,6 +470,23 @@ function fixRapRuArticle(doc) {
       div.remove();
     }
   });
+  
+  //---duplicate H2---
+  function removeH2IfInTitle() {
+    const title = document.querySelector('head title');
+    if (!title) return;
+    
+    const titleText = title.textContent;
+    const articleH2s = document.querySelectorAll('article h2');
+    
+    articleH2s.forEach(h2 => {
+      const h2Text = h2.textContent.trim();
+      if (titleText.includes(h2Text)) {
+        h2.remove();
+      }
+    });
+  }
+  removeH2IfInTitle();
 
   //---tags---
   const tags = doc.querySelectorAll('div.tags a');
