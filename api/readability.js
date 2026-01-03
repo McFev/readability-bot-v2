@@ -164,6 +164,10 @@ module.exports = async (request, response) => {
       author = newValue.author;
       constLang = 'ru-RU';
     }
+    if (hostname === "codeby.net") {
+      const newValue = fixCodeby(doc);
+      tags = newValue.tags;
+    }
 
     const reader = new Readability(doc);
     const article = reader.parse();
@@ -470,15 +474,15 @@ function fixRapRuArticle(doc) {
       div.remove();
     }
   });
-  
+
   //---duplicate H2---
   function removeH2IfInTitle() {
     const title = doc.querySelector('head title');
     if (!title) return;
-    
+
     const titleText = title.textContent.trim();
     const articleH2s = doc.querySelectorAll('article h2');
-    
+
     articleH2s.forEach(h2 => {
       const h2Text = h2.textContent.trim();
       if (titleText.includes(h2Text)) {
@@ -730,6 +734,30 @@ function fixVolzskyArticle(doc) {
   }
   if (authorString) {
     result.author = authorString;
+  }
+
+  return result;
+}
+
+function fixCodeby(doc) {
+  const result = {
+    tags: []
+  }
+
+  //---tags---
+  result.tags = [...new Set(
+    Array.from(doc.querySelectorAll('span.js-tagList a'))
+      .map(a => a.textContent.trim())
+  )];
+  //---type---
+  const h1Elements = doc.getElementsByTagName('h1');
+  for (const h1 of h1Elements) {
+    const allSpans = h1.getElementsByTagName('span');
+    for (const span of allSpans) {
+      if (span.classList.contains('label') && !span.classList.contains('label-append')) {
+        result.tags.push('type_' + span.textContent.trim().toLowerCase());
+      }
+    }
   }
 
   return result;
