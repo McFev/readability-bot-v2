@@ -408,103 +408,18 @@ function fixRapRuArticle(doc) {
     notFound: false
   }
 
-  //---notFound---
-  const headElement = doc.querySelector('h1, h2');
-  if (headElement && headElement?.textContent.toLowerCase().includes('данной страницы не существует')) {
-    result.notFound = true;
-    return result;
-  }
-
   //---datePublished---
-  const dateElements = doc.querySelectorAll("p.date, span.date");
+  const dateElements = doc.querySelectorAll("meta[itemprop='datePublished']");
   let dateString = '';
   for (const el of dateElements) {
-    dateString = el.textContent.trim() || dateString;
+    dateString = el?.content.trim() || dateString;
+    dateString = dateString.replace('MSK', ' ');
     el.remove();
   }
-  if (!!dateString) {
-    const months = {
-      января: 0, февраля: 1, марта: 2, апреля: 3, мая: 4, июня: 5,
-      июля: 6, августа: 7, сентября: 8, октября: 9, ноября: 10, декабря: 11
-    };
-    const parts = dateString.split(/[\s,]+/);
-    const day = parseInt(parts[0], 10);
-    const month = months[parts[1].toLowerCase().trim()];
-    const year = parseInt(parts[2], 10);
-    const timeParts = parts[3].split(':');
-    const hours = parseInt(timeParts[0], 10);
-    const minutes = parseInt(timeParts[1], 10);
-    result.datePublished = new Date(year, month, day, hours, minutes);
+  if (dateString) {
+    const date = new Date(dateString);
+    result.datePublished = date.toISOString();
   }
-
-  //---author---
-  const authorElements = doc.querySelectorAll("p.authors, span.authors, p.author, span.author");
-  let authorString = '';
-  for (const el of authorElements) {
-    authorString = el.textContent.trim() || authorString;
-    el.remove();
-  }
-  if (!!authorString) {
-    result.author = authorString.replaceAll('Авторы:', '').replaceAll('Автор:', '').trim();
-  }
-
-  //---og:image og:sitename---
-  const img = doc.querySelector('img.pic');
-  if (img?.src) {
-    const meta = doc.createElement('meta');
-    meta.setAttribute('property', 'og:image');
-    meta.setAttribute('content', img.src);
-    doc.head.appendChild(meta);
-  }
-  meta = doc.createElement('meta');
-  meta.setAttribute('property', 'og:site_name');
-  meta.setAttribute('content', 'RAP.RU');
-  doc.head.appendChild(meta);
-
-  //---quote---
-  doc.querySelectorAll('div.announce').forEach(div => {
-    if (div.textContent.trim() !== '') {
-      const blockquote = doc.createElement('blockquote');
-      blockquote.innerHTML = div.innerHTML;
-      Array.from(div.attributes).forEach(attr => {
-        blockquote.setAttribute(attr.name, attr.value);
-      });
-      div.replaceWith(blockquote);
-    } else {
-      div.remove();
-    }
-  });
-
-  //---duplicate H2---
-  function removeH2IfInTitle() {
-    const title = doc.querySelector('head title');
-    if (!title) return;
-
-    const titleText = title.textContent.trim();
-    const articleH2s = doc.querySelectorAll('article h2');
-
-    articleH2s.forEach(h2 => {
-      const h2Text = h2.textContent.trim();
-      if (titleText.includes(h2Text)) {
-        h2.remove();
-      }
-    });
-  }
-  removeH2IfInTitle();
-
-  //---tags---
-  const tags = doc.querySelectorAll('div.tags a');
-  result.tags = Array.from(tags).map(a => a.textContent.trim());
-  tags.forEach(a => a.remove());
-
-  //---лишнее, копия из instantview template---
-  doc.querySelectorAll('hr + p a').forEach(el => el.remove());
-  doc.querySelectorAll('hr ~ p strong').forEach(el => {
-    if (el.textContent.toLowerCase().includes('в тему')) {
-      el.remove();
-    }
-  });
-  doc.querySelectorAll('hr').forEach(el => el.remove());
 
   return result;
 }
