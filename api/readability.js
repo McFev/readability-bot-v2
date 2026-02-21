@@ -133,7 +133,7 @@ module.exports = async (request, response) => {
     let constLang = null;
     //let debug = {}; // TODO
     let pageNotFound = false;
-    if (hostname === "www.rap.ru") {
+    if (hostname === "rap.ru") {
       const newValue = fixRapRuArticle(doc);
       datePublished = newValue.datePublished;
       author = newValue.author;
