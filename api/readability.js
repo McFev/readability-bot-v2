@@ -421,6 +421,14 @@ function fixRapRuArticle(doc) {
     result.datePublished = date.toISOString();
   }
 
+  //---title---
+  const h1Element = doc.querySelector('h1');
+  if (h1Element) {
+    const h1Text = h1Element.textContent || h1Element.innerText;
+    doc.title = h1Text;
+    h1Element.remove();
+  }
+
   return result;
 }
 
