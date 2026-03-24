@@ -429,6 +429,13 @@ function fixRapRuArticle(doc) {
     h1Element.remove();
   }
 
+  //---content---
+  const text = doc.querySelector('div.t-feed__post-popup__content');
+  const body = doc.querySelector('body');
+  if (body && text) {
+    body.innerHTML = text.innerHTML;
+  }
+
   return result;
 }
 
