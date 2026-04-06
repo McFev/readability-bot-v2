@@ -1,65 +1,118 @@
-# Readability Bot
+# Readability Bot v2
 
-A wrapper around [Readability.js](https://github.com/mozilla/readability).
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMcFev%2Freadability-bot-v2)
 
-_Telegram bot: [@Readabbot](https://t.me/readabbot)_
+![GitHub last commit](https://img.shields.io/github/last-commit/McFev/readability-bot-v2) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/McFev/readability-bot-v2) ![GitHub repo size](https://img.shields.io/github/repo-size/McFev/readability-bot-v2) ![No Ads](https://img.shields.io/badge/No%20Ads-orange)
 
-_Web app: https://readability-bot.vercel.app_
+A simple web service that extracts readable content from web articles using Mozilla's [Readability.js](https://github.com/mozilla/readability). It cleans up cluttered web pages, removes ads, navigation, and other distractions, making articles easier to read. The service includes custom fixes for specific websites and can handle iframes by converting them to clickable links.
 
-## API
+Hosted on [Vercel](https://vercel.com/), the app provides a clean interface for users to input a URL and view a readable version of the article. It also exposes an API endpoint for programmatic access.
 
-**Endpoint**: `/api/readability?url={URL}&format=json` ([e.g.](https://readability-bot.vercel.app/api/readability?url=https%3A%2F%2Fwww.zaobao.com%2Fnews%2Fchina%2Fstory20211002-1199284&format=json))
+## Features
 
-Returns a self-explanatory JSON inherited from Readability.js.
+- **Article Extraction**: Uses Readability.js to parse and clean web pages.
+- **Custom Site Fixes**: Special handling for sites like:
+  - [rap.ru](https://rap.ru/)
+  - [the-flow.ru](https://the-flow.ru/)
+  - [hiphop4real.com](https://hiphop4real.com/)
+  - [thecode.media](https://thecode.media/)
+  - [volzsky.ru](https://www.volzsky.ru/)
+  and other
+- **Iframe Conversion**: Optionally converts embedded iframes (e.g., YouTube, VK, Rutube) to plain links for better readability.
+- **API Endpoint**: `/api/readability?url=<URL>&format=<html|json>&changeiframe=<true|false>`
+- **Frontend Interface**: Built with Svelte, allowing users to submit URLs via a simple form.
+- **Formats Supported**: HTML (default), JSON (metadata + content).
 
-## Instant View for any\* website
+## Demo
 
-### Bot
+Try it out at: [readability-bot-v2.vercel.app](https://readability-bot-v2.vercel.app)
 
-The Telegram bot returns "readable" articles with Instant View enabled automatically.
+Example API call:  
+`https://readability-bot-v2.vercel.app/api/readability?url=https://example.com/article`
 
-### Web service
+## Installation
 
-It is also possbile to apply a quick Instant View to any\* website programmatically with the help of the web service.
-Assuming `ARTICLE_TITLE="Lorem Ipsum"`, `ARTICLE_URL="https://example.org/blog-post/1"` and `CHANNEL` is the ID of channel, which typically is the subscribing channel for a (news/blog/etc.) website:
+To run locally:
 
-**JavaScript**:
+1. Clone the repository:
+   ```
+   git clone https://github.com/McFev/readability-bot-v2.git
+   cd readability-bot-v2
+   ```
 
-```js
-const readableUrl = `https://readability-bot.vercel.app/api/readability?url=${encodeURIComponent(
-  ARTICLE_URL
-)}`;
-const ivUrl = `https://t.me/iv?url=${encodeURIComponent(
-  readableUrl
-)}&rhash=71b64d09b0a20d`;
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-const message = `<a href="${ivUrl}"> </a><a href="${articleUrl}">${ARTICLE_TITLE}</a>`;
-bot.sendMessage(CHANNEL, message, (parseMode = "html"));
-```
+3. Run in development mode:
+   ```
+   npm run dev
+   ```
 
-**Python**:
+   This starts a local server with live reloading. Open `http://localhost:5000` in your browser.
 
-```py
-  import urllib.parse import quote as percent_encode
-  # ... ...
-  readable_url = f'https://readability-bot.vercel.app/api/readability?url={percent_encode(ARTICLE_URL, safe="")}';
-  iv_url = f'https://t.me/iv?url={percent_encode(readable_url, safe="")}&rhash=71b64d09b0a20d';
+4. Build for production:
+   ```
+   npm run build
+   ```
 
-  message = f'<a href="{iv_url}"> </a><a href="{article_url}">{articleTitle}</a>';
-  bot.send_message(CHANNEL, message, parse_mode="html") # await it?
-```
+5. Start the production server:
+   ```
+   npm start
+   ```
 
-<sup><sub>\*: Almost, with no guarantee. Compatibility issues for specific websites are generally not accepted in this project. Please report those to [readability.js](https://github.com/mozilla/readability), **if applicable**.</sub></sup>
+## Usage
 
-## Deploy Your Own
+### Frontend
+- Visit the homepage.
+- Enter a URL in the input field.
+- Click "Read" to view the cleaned article.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/gowee/readability-bot&template=svelte)
+### API
+- **Endpoint**: `/api/readability`
+- **Query Parameters**:
+  - `url` (required): The URL of the article to process.
+  - `format` (optional, default: html): Output format (`html`, `json`).
+  - `changeiframe` (optional, default: false): Set to `true` to convert iframes to links.
+- **Example Response (JSON)**:
+  ```json
+  {
+    "title": "Article Title",
+    "byline": "Author Name",
+    "content": "<div>Readable content...</div>",
+    "textContent": "Plain text version...",
+    "length": 1234,
+    "excerpt": "Short summary...",
+    "siteName": "Site Name",
+    "lang": "en",
+    "publishedTime": "2023-01-01T00:00:00.000Z"
+  }
+  ```
 
-And, some [environment variables](https://vercel.com/docs/concepts/projects/environment-variables) are expected:
-- [`BOT_TOKEN`](https://core.telegram.org/bots/features#botfather): REQUIRED for the bot service. Do not forget to [set the webhook address](https://core.telegram.org/bots/webhooks#how-do-i-set-a-webhook-for-either-type) to `{APP_URL}/api/webhook`.
-- `APP_URL`: Optional, inferred automatically from Vercel runtime. e.g. `https://readability-bot.vercel.app`
-- `READABILITY_API_URL`: Optional, inferred automatically from Vercel runtime. e.g. `https://readability-bot.vercel.app/api/readability`
-- `IV_RHASH`: Optional, [71b64d09b0a20d](rules.iv) is used by default.
+## Deployment
 
-### Run locally
-`npx vercel dev`
+### Vercel
+1. Fork this repository.
+2. Go to [Vercel](https://vercel.com/) and create a new project.
+3. Import your forked repo.
+4. Deploy! Vercel will handle the build and hosting automatically.
+
+Environment Variables (optional):
+- `APP_URL`: Custom app URL (defaults to Vercel URL).
+- `READABILITY_API_URL`: Custom API base URL.
+
+### Other Platforms
+The app is a standard Node.js/Svelte project bundled with Rollup, so it can be deployed to any Node.js-compatible host like Heroku, AWS, or DigitalOcean.
+
+## Dependencies
+
+- Core: [@mozilla/readability](https://www.npmjs.com/package/@mozilla/readability), [jsdom](https://www.npmjs.com/package/jsdom), [node-fetch](https://www.npmjs.com/package/node-fetch)
+- Build: [Svelte](https://svelte.dev/), [Rollup](https://rollupjs.org/)
+- Others: dompurify, html-entities, normalize-url
+
+See `package.json` for the full list.
+
+---
+
+Powered by [Mozilla Readability](https://github.com/mozilla/readability). If you find this useful, star the repo! ⭐
