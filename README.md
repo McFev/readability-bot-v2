@@ -17,6 +17,7 @@ Hosted on [Vercel](https://vercel.com/), the app provides a clean interface for 
   - [hiphop4real.com](https://hiphop4real.com/)
   - [thecode.media](https://thecode.media/)
   - [volzsky.ru](https://www.volzsky.ru/)
+  
   and other
 - **Iframe Conversion**: Optionally converts embedded iframes (e.g., YouTube, VK, Rutube) to plain links for better readability.
 - **API Endpoint**: `/api/readability?url=<URL>&format=<html|json>&changeiframe=<true|false>`
