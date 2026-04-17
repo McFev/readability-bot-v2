@@ -435,6 +435,10 @@ function fixRapRuArticle(doc) {
   if (body && text) {
     body.innerHTML = text.innerHTML;
   }
+  const dpw = doc.querySelectorAll('div[class*="date-parts-wrapper"]');
+  for (const el of dpw) {
+    el.remove();
+  }
 
   return result;
 }
