@@ -9,7 +9,9 @@
 
 <main class="section is-medium columns is-flex is-vcentered">
 	<div class="container is-max-desktop has-text-centered">
-		<h1 class="title" translate="no"><img src="/favicon.svg" alt="logo"> Readability</h1>
+		<h1 class="title" translate="no">
+			<img src="/favicon.svg" alt="logo" /> Readability
+		</h1>
 		<form action="/api/readability" method="get" class="search-form">
 			<div class="field has-addons">
 				<p class="control is-expanded">
@@ -17,7 +19,7 @@
 						name="url"
 						type="url"
 						required
-						placeholder='Link to an "unreadable" article'
+						placeholder="Link to an "unreadable" article"
 						bind:this={inputRef}
 						class="input is-rounded has-text-centered search-box"
 					/>
@@ -33,19 +35,19 @@
 		</form>
 		<p>
 			<small>
-				The 
+				The
 				<a
 					href="https://github.com/McFev/readability-bot-v2"
 					target="_blank"
 				>
-				service
+					service
 				</a>
 				is powered by
 				<a
 					href="https://github.com/mozilla/readability"
 					target="_blank"
 				>
-				Readability.js
+					Readability.js
 				</a>
 				and hosted on
 				<a href="https://vercel.com/" target="_blank">Vercel</a>.
@@ -62,14 +64,20 @@
 	}
 
 	h1 {
-		color: #CA4638;
+		color: #ca4638;
 		text-transform: uppercase;
 		font-size: 2.5em;
 		font-weight: bold;
 	}
 
 	h1 > img {
-		height: 1cap;
+		height: 0.7em;
+	}
+
+	@supports (height: 1cap) {
+		h1 > img {
+			height: 1cap;
+		}
 	}
 
 	.search-form .field {
