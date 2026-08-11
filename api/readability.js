@@ -609,7 +609,7 @@ function fixThecodeMediaArticle(doc) {
   if (metaTag) {
     metaTag.setAttribute('content',
       metaTag.getAttribute('content')
-        .replace(/\s*—\s*(журнал\s*)?[«"]?код[»"]?.*$/gi, '')
+        .replace(/\s*—\s*(журнал\s*)?(яндекс\s*)?(практикума\s*)?[«"]?код[»"]?.*$/gi, '')
         .trim())
   }
 
