@@ -158,12 +158,6 @@ module.exports = async (request, response) => {
       const newValue = fixThecodeMediaArticle(doc);
       tags = newValue.tags;
     }
-    if (hostname === 'www.volzsky.ru' || url.includes('www.volzsky.ru')) {
-      const newValue = fixVolzskyArticle(doc);
-      datePublished = newValue.datePublished;
-      author = newValue.author;
-      constLang = 'ru-RU';
-    }
     if (hostname === "codeby.net") {
       const newValue = fixCodeby(doc);
       tags = newValue.tags;
@@ -622,57 +616,6 @@ function fixThecodeMediaArticle(doc) {
   return result;
 }
 
-function fixVolzskyArticle(doc) {
-  const result = {
-    datePublished: null,
-    author: null
-  }
-
-  //---content---
-  const text = doc.querySelector('div#n_n');
-  const body = doc.querySelector('body');
-  if (body && text) {
-    body.innerHTML = text.innerHTML;
-  }
-
-  //---datePublished---
-  const allDivs = doc.querySelectorAll('div');
-  let lastDiv = null;
-  for (const div of allDivs) {
-    const text = div.textContent.trim();
-    const match = text.match(/\d{2} \S+ \d{4} \d{2}:\d{2}:\d{2}/);
-    if (match) {
-      const dateString = match[0]; // "05 июня 2025 15:58:10"
-      const months = {
-        января: 0, февраля: 1, марта: 2, апреля: 3, мая: 4, июня: 5,
-        июля: 6, августа: 7, сентября: 8, октября: 9, ноября: 10, декабря: 11
-      };
-      const dateParts = dateString.split(' ');
-      const day = parseInt(dateParts[0], 10);
-      const month = months[dateParts[1]];
-      const year = parseInt(dateParts[2], 10);
-      const [hours, minutes, seconds] = dateParts[3].split(':').map(Number);
-      result.datePublished = new Date(year, month, day, hours, minutes, seconds);
-      lastDiv = div;
-    }
-  }
-  if (lastDiv) {
-    lastDiv.remove();
-  }
-
-  //---author---
-  const authorElements = doc.querySelectorAll('a[itemprop="author"]');
-  let authorString = '';
-  for (const el of authorElements) {
-    authorString = el.textContent.trim() || authorString;
-  }
-  if (authorString) {
-    result.author = authorString;
-  }
-
-  return result;
-}
-
 function fixCodeby(doc) {
   const result = {
     tags: []
@@ -680,19 +623,16 @@ function fixCodeby(doc) {
 
   //---tags---
   result.tags = [...new Set(
-    Array.from(doc.querySelectorAll('span.js-tagList a'))
-      .map(a => a.textContent.trim())
+    Array.from(doc.querySelectorAll('a.cdb-th__tag'))
+      .map(a => a.textContent.trim().replace('#', ''))
   )];
   //---type---
-  const h1Elements = doc.getElementsByTagName('h1');
-  for (const h1 of h1Elements) {
-    const allSpans = h1.getElementsByTagName('span');
-    for (const span of allSpans) {
-      if (span.classList.contains('label') && !span.classList.contains('label-append')) {
-        result.tags.push('type_' + span.textContent.trim().toLowerCase());
-      }
-    }
-  }
+  result.tags = [...result.tags, ...new Set(
+    Array.from(doc.querySelectorAll('div.cdb-th__badges span'))
+      .map(a => a.textContent.trim().toLowerCase())
+      .filter(Boolean)
+      .map(s => 'type_' + s)
+  )]
 
   return result;
 }
