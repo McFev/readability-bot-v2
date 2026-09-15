@@ -625,14 +625,28 @@ function fixCodeby(doc) {
   result.tags = [...new Set(
     Array.from(doc.querySelectorAll('a.cdb-th__tag'))
       .map(a => a.textContent.trim().replace('#', ''))
+  ), ...new Set(
+    Array.from(doc.querySelectorAll('div.cdb-tags a'))
+      .map(a => a.textContent.trim().replace('#', ''))
   )];
   //---type---
-  result.tags = [...result.tags, ...new Set(
+  const badges = [...new Set(
     Array.from(doc.querySelectorAll('div.cdb-th__badges span'))
       .map(a => a.textContent.trim().toLowerCase())
       .filter(Boolean)
-      .map(s => 'type_' + s)
-  )]
+  ), ...new Set(
+    Array.from(doc.querySelectorAll('div.cdb-jobd__badges span'))
+      .map(a => a.textContent.trim().toLowerCase())
+      .filter(Boolean)
+  )];
+  result.tags = [...result.tags, ...(badges.length ? ['type_ignore', ...badges] : badges)];
+
+  const chips = [...new Set(
+    Array.from(doc.querySelectorAll('div.cdb-chiprow span'))
+      .map(a => a.textContent.trim().toLowerCase())
+      .filter(Boolean)
+  )];
+  result.tags = [...result.tags, ...(chips.length ? ['type_article', ...chips] : chips)];
 
   return result;
 }
