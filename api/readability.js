@@ -164,7 +164,7 @@ module.exports = async (request, response) => {
     }
     if (hostname === "vdkenergo.ru") {
       const newValue = fixVgtsVdkenergoArticle(doc);
-      tags = newValue.tags;
+      datePublished = newValue.datePublished;
     }
 
     const reader = new Readability(doc);
