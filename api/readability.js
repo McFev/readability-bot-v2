@@ -162,6 +162,10 @@ module.exports = async (request, response) => {
       const newValue = fixCodeby(doc);
       tags = newValue.tags;
     }
+    if (hostname === "vdkenergo.ru") {
+      const newValue = fixVgtsVdkenergoArticle(doc);
+      tags = newValue.tags;
+    }
 
     const reader = new Readability(doc);
     const article = reader.parse();
@@ -647,6 +651,28 @@ function fixCodeby(doc) {
       .filter(Boolean)
   )];
   result.tags = [...result.tags, ...(chips.length ? ['type_article', ...chips] : chips)];
+
+  return result;
+}
+
+function fixVgtsVdkenergoArticle(doc) {
+  const result = {
+    datePublished: null
+  }
+
+  //---datePublished---
+  const el = doc.querySelector('a10\\:updated');
+  const dateString = el.textContent.trim().replace(/[{}]/g, '').trim();
+  if (dateString) {
+    const date = new Date(dateString);
+    result.datePublished = date.toISOString();
+  }
+
+  //---content---
+  doc.querySelectorAll('[class*="article-date"]').forEach(el => el.remove());
+  doc.querySelectorAll('[class*="panel"]').forEach(el => el.remove());
+  doc.querySelectorAll('[class*="row"]').forEach(el => el.remove());
+  doc.querySelectorAll('[class*="list-widget"]').forEach(el => el.remove());
 
   return result;
 }
