@@ -671,8 +671,7 @@ function fixVgtsVdkenergoArticle(doc) {
     if (m) {
       const [, dd, mm, yyyy, hh, mi, ss = '0'] = m;
       const date = new Date(Date.UTC(
-        +yyyy, +mm - 1, +dd,
-        +hh, +mi, +ss
+        +yyyy, +mm - 1, +dd, +hh, +mi, +ss
       ));
       if (!isNaN(date.getTime())) {
         result.datePublished = date.toISOString();
