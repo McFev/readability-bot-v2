@@ -661,11 +661,20 @@ function fixVgtsVdkenergoArticle(doc) {
   }
 
   //---datePublished---
-  const el = doc.querySelector('a10\\:updated');
-  const dateString = el.textContent.trim().replace(/[{}]/g, '').trim();
-  if (dateString) {
-    const date = new Date(dateString);
-    result.datePublished = date.toISOString();
+  const el = doc.querySelector('a10\\:updated')
+    || doc.getElementsByTagName('a10:updated')[0];
+
+  if (el) {
+    const raw = el.textContent.trim().replace(/[{}]/g, '').trim();
+    const m = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+
+    if (m) {
+      const [, dd, mm, yyyy, hh, mi, ss] = m.map(Number);
+      const date = new Date(Date.UTC(yyyy, mm - 1, dd, hh, mi, ss));
+      if (!isNaN(date.getTime())) {
+        result.datePublished = date.toISOString();
+      }
+    }
   }
 
   //---content---
