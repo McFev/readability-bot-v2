@@ -666,11 +666,14 @@ function fixVgtsVdkenergoArticle(doc) {
 
   if (el) {
     const raw = el.textContent.trim().replace(/[{}]/g, '').trim();
-    const m = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+    const m = raw.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})\D+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
 
     if (m) {
-      const [, dd, mm, yyyy, hh, mi, ss] = m.map(Number);
-      const date = new Date(Date.UTC(yyyy, mm - 1, dd, hh, mi, ss));
+      const [, dd, mm, yyyy, hh, mi, ss = '0'] = m;
+      const date = new Date(Date.UTC(
+        +yyyy, +mm - 1, +dd,
+        +hh, +mi, +ss
+      ));
       if (!isNaN(date.getTime())) {
         result.datePublished = date.toISOString();
       }
