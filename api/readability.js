@@ -162,7 +162,7 @@ module.exports = async (request, response) => {
       const newValue = fixCodeby(doc);
       tags = newValue.tags;
     }
-    if (hostname === "vdkenergo.ru") {
+    if (hostname === "vgts.vdkenergo.ru") {
       const newValue = fixVgtsVdkenergoArticle(doc);
       datePublished = newValue.datePublished;
     }
