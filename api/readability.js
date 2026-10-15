@@ -617,6 +617,13 @@ function fixThecodeMediaArticle(doc) {
       .map(a => a.textContent.trim().replace(/^#/, ''))
   )];
 
+  //---content---
+  doc.querySelectorAll('div[class*="wp-block-lazyblock-"]').forEach(el => {
+    if ([...el.classList].some(c => /^wp-block-lazyblock-\S+$/.test(c))) {
+      el.remove();
+    }
+  });
+
   return result;
 }
 
